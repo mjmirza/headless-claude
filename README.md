@@ -5,7 +5,7 @@
 ### *Transform AI from a Tool into Infrastructure*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Made with Love](https://img.shields.io/badge/Made%20with-❤-red.svg)](https://github.com/yourusername/headless-claude)
+[![Made with Love](https://img.shields.io/badge/Made%20with-❤-red.svg)](https://github.com/mirzaiqbal/headless-claude)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Documentation](https://img.shields.io/badge/docs-comprehensive-blue.svg)](#documentation)
 
