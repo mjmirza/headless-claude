@@ -2,6 +2,8 @@
 
 # 🚀 The Ultimate Headless Claude Code Guide
 
+[![OpenRoots ORA 2.3](https://openroots.org/badge/ora.svg)](https://openroots.org/licenses/ora/2.3)
+
 ### *Transform AI from a Tool into Infrastructure*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
