@@ -97,21 +97,19 @@ Turn 3:  User → Claude (with full history) → Response
 
 #### Session Storage
 
-Sessions are stored as JSONL (JSON Lines) files:
+Sessions are stored as JSONL files, one file per session. The directory name is the working directory path with non-alphanumeric characters replaced by `-`. The filename is the session UUID:
 
 ```
-~/.claude/transcripts/
-├── session-abc123def456.jsonl
-├── session-xyz789uvw012.jsonl
-└── agent-agent123.jsonl
+~/.claude/projects/<encoded-cwd>/<session-id>.jsonl
 ```
 
-Each line is a message:
-```json
-{"role":"user","content":"Initial request"}
-{"role":"assistant","content":"Response...","metadata":{...}}
-{"role":"user","content":"Follow-up request"}
+A session started in `/home/user/project` is stored as:
+
 ```
+~/.claude/projects/-home-user-project/550e8400-e29b-41d4-a716-446655440000.jsonl
+```
+
+Resume it with that `session_id`, or pass `--resume` the absolute path of the `.jsonl` file.
 
 #### Session Continuation
 
@@ -119,7 +117,7 @@ Each line is a message:
 ```bash
 # First execution
 claude -p "Start analysis" --output-format json
-# → Creates session-abc123.jsonl
+# → Prints a result whose session_id is the transcript filename
 
 # Continue automatically
 claude -c -p "Continue with next step"
@@ -130,7 +128,7 @@ claude -c -p "Continue with next step"
 ```bash
 # Capture session ID
 RESULT=$(claude -p "Begin work" --output-format json)
-SESSION=$(echo "$RESULT" | jq -r '.metadata.sessionId')
+SESSION=$(echo "$RESULT" | jq -r '.session_id')
 
 # Resume later
 claude -r "$SESSION" -p "Continue from where we left off"
@@ -160,7 +158,7 @@ Claude Code automatically manages context:
 RESULT=$(claude -p "Begin comprehensive security audit of authentication system" \
   --output-format json)
 
-SESSION=$(echo "$RESULT" | jq -r '.metadata.sessionId')
+SESSION=$(echo "$RESULT" | jq -r '.session_id')
 
 # Turn 2: Deep dive on findings
 claude -r "$SESSION" -p "For each security issue found, analyze exploitability"
@@ -545,7 +543,7 @@ Distributed:    Linear scaling with hosts
 # Don't use multi-turn for simple queries
 # ❌ Bad
 RESULT=$(claude -p "List files" --output-format json)
-SESSION=$(echo "$RESULT" | jq -r '.metadata.sessionId')
+SESSION=$(echo "$RESULT" | jq -r '.session_id')
 claude -r "$SESSION" -p "Done"  # Unnecessary
 
 # ✓ Good

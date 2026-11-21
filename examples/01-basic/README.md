@@ -93,22 +93,26 @@ Returns plain text response - ideal for:
 claude -p "List all TypeScript files" --output-format json
 ```
 
-**Example JSON structure:**
+**Example JSON structure** (`--output-format json` prints these fields at the top level):
 ```json
 {
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "duration_ms": 4500,
+  "duration_api_ms": 3200,
+  "num_turns": 3,
   "result": "Here are the TypeScript files...",
-  "metadata": {
-    "totalCost": 0.0123,
-    "duration": 4500,
-    "turns": 3,
-    "sessionId": "abc123xyz"
-  }
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "total_cost_usd": 0.0123
 }
 ```
 
+`result` is the text. `session_id` is the UUID to pass to `--resume`. `total_cost_usd` is a client-side cost estimate. `duration_ms` and `num_turns` are timing and turn count. There is no `metadata` object.
+
 **Use cases:**
 - Parsing responses programmatically
-- Extracting metadata (cost, duration, session ID)
+- Extracting cost, duration, and the session ID
 - Building dashboards and analytics
 - Chain operations based on structured data
 
@@ -400,8 +404,8 @@ done >> deployment.log
 ```bash
 # Extract specific data
 RESULT=$(claude -p "List TODO items" --output-format json | jq -r '.result')
-SESSION_ID=$(claude -p "Analyze code" --output-format json | jq -r '.metadata.sessionId')
-COST=$(claude -p "Generate tests" --output-format json | jq -r '.metadata.totalCost')
+SESSION_ID=$(claude -p "Analyze code" --output-format json | jq -r '.session_id')
+COST=$(claude -p "Generate tests" --output-format json | jq -r '.total_cost_usd')
 ```
 
 ### 5. Isolate Execution Environments

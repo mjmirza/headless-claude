@@ -101,6 +101,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Examples that resume a session or track cost now read `session_id`, `total_cost_usd`, `duration_ms`, and `num_turns` from the `--output-format json` result. The previous `.metadata.sessionId` and `.metadata.totalCost` paths are not in that result, so those commands captured `null`.
+- `--session-id` examples use a UUID. A display name is set with `--name`, which `--resume` accepts.
+- Session troubleshooting points at `~/.claude/projects/<encoded-cwd>/<session-id>.jsonl`.
+
 ### Planned
 - Advanced pipeline examples (07-pipelines)
 - Monitoring and observability examples (08-monitoring)

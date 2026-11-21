@@ -264,7 +264,7 @@ Automate database migrations using headless Claude Code with validation.
 ```bash
 # Stage 1: Analyze current schema
 SESSION=$(claude -p "Analyze PostgreSQL schema in db/schema.sql" \
-  --output-format json | jq -r '.metadata.sessionId')
+  --output-format json | jq -r '.session_id')
 
 # Stage 2: Generate migration
 claude -r "$SESSION" -p "Generate migration to add user roles table"

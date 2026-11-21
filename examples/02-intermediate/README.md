@@ -38,10 +38,10 @@ claude --continue -p "Generate a security report"
 ```bash
 # Initial execution - capture session ID
 RESULT=$(claude -p "Begin code audit" --output-format json)
-SESSION_ID=$(echo "$RESULT" | jq -r '.metadata.sessionId')
+SESSION_ID=$(echo "$RESULT" | jq -r '.session_id')
 
 echo "Session ID: $SESSION_ID"
-# Output: Session ID: abc123def456
+# Output: Session ID: 550e8400-e29b-41d4-a716-446655440000
 
 # Resume specific session later
 claude -r "$SESSION_ID" -p "Continue the audit with database queries"
@@ -59,7 +59,7 @@ SESSION_FILE=".claude-session"
 
 # Start new analysis
 RESULT=$(claude -p "Analyze API security" --output-format json)
-SESSION_ID=$(echo "$RESULT" | jq -r '.metadata.sessionId')
+SESSION_ID=$(echo "$RESULT" | jq -r '.session_id')
 echo "$SESSION_ID" > "$SESSION_FILE"
 
 echo "Analysis started. Session: $SESSION_ID"
@@ -78,8 +78,8 @@ resume_analysis "Review authorization logic"
 ### Fork Sessions for Parallel Exploration
 
 ```bash
-# Original session
-claude -p "Review user authentication" --session-id "auth-review"
+# Original session. --session-id must be a UUID; use --name for a label.
+claude -p "Review user authentication" --name "auth-review"
 
 # Fork for different approaches
 claude -r "auth-review" --fork-session -p "Explore JWT implementation"
@@ -127,7 +127,7 @@ RESULT=$(claude -p "Perform initial security scan of $PROJECT_DIR" \
   --output-format json \
   --max-turns 10)
 
-SESSION=$(echo "$RESULT" | jq -r '.metadata.sessionId')
+SESSION=$(echo "$RESULT" | jq -r '.session_id')
 FINDINGS=$(echo "$RESULT" | jq -r '.result')
 
 echo "$FINDINGS" > /tmp/stage1.txt
@@ -167,7 +167,7 @@ echo "Analyzing $FILE_TO_REFACTOR..."
 ANALYSIS=$(claude -p "Analyze $FILE_TO_REFACTOR and identify refactoring opportunities" \
   --output-format json)
 
-SESSION=$(echo "$ANALYSIS" | jq -r '.metadata.sessionId')
+SESSION=$(echo "$ANALYSIS" | jq -r '.session_id')
 
 # Turn 2: Plan refactoring
 echo "Planning refactoring..."
@@ -497,7 +497,7 @@ echo "=== Stage 1: Creating inventory ==="
 RESULT=$(claude -p "List all JavaScript files in src/ and categorize by complexity" \
   --output-format json)
 
-SESSION=$(echo "$RESULT" | jq -r '.metadata.sessionId')
+SESSION=$(echo "$RESULT" | jq -r '.session_id')
 echo "Session: $SESSION"
 
 # Stage 2: Migration plan
@@ -565,7 +565,7 @@ INCIDENT_LOG="$LOG_DIR/incident-${INCIDENT_TYPE}-${TIMESTAMP}.log"
     --output-format json \
     --max-turns 10)
 
-  SESSION=$(echo "$ASSESSMENT" | jq -r '.metadata.sessionId')
+  SESSION=$(echo "$ASSESSMENT" | jq -r '.session_id')
   echo "$ASSESSMENT" | jq -r '.result'
 
   # Step 2: Root cause analysis
@@ -658,7 +658,7 @@ RESULT=$(claude $RESUME_FLAG -p "Update project documentation:
   --allowedTools "Read,Write,Edit,Grep,Glob,Bash")
 
 # Save session for next run
-NEW_SESSION=$(echo "$RESULT" | jq -r '.metadata.sessionId')
+NEW_SESSION=$(echo "$RESULT" | jq -r '.session_id')
 echo "$NEW_SESSION" > "$SESSION_FILE"
 
 echo "Documentation updated. Session: $NEW_SESSION"
@@ -686,11 +686,11 @@ fi
 save_session() {
   local result="$1"
   local session_file="$2"
-  echo "$result" | jq -r '.metadata.sessionId' > "$session_file"
+  echo "$result" | jq -r '.session_id' > "$session_file"
 }
 
-# Use descriptive session IDs
-claude -p "Task" --session-id "feature-auth-$(date +%Y%m%d)"
+# --session-id must be a UUID. A display name is set with --name.
+claude -p "Task" --name "feature-auth-$(date +%Y%m%d)"
 ```
 
 ### 2. Error Handling in Multi-Turn
@@ -718,7 +718,7 @@ trap cleanup EXIT
 # Monitor costs across sessions
 track_costs() {
   local result="$1"
-  local cost=$(echo "$result" | jq -r '.metadata.totalCost')
+  local cost=$(echo "$result" | jq -r '.total_cost_usd')
   echo "$(date -u +%Y-%m-%dT%H:%M:%SZ),$cost" >> costs.csv
 }
 

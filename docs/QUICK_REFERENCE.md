@@ -56,9 +56,9 @@ done
 ## Session Management
 
 ```bash
-# Capture session ID
+# Capture session ID (a UUID on the result object)
 RESULT=$(claude -p "start" --output-format json)
-SESSION=$(echo "$RESULT" | jq -r '.metadata.sessionId')
+SESSION=$(echo "$RESULT" | jq -r '.session_id')
 
 # Resume
 claude -r "$SESSION" -p "continue"
@@ -66,8 +66,12 @@ claude -r "$SESSION" -p "continue"
 # Continue last
 claude -c -p "next"
 
-# Custom session ID
-claude -p "task" --session-id "my-session-123"
+# Name a session, then resume it by that name
+claude -p "task" --name "my-session"
+claude -r "my-session" -p "continue"
+
+# Or choose the session UUID yourself
+claude -p "task" --session-id "550e8400-e29b-41d4-a716-446655440000"
 ```
 
 ## Tool Configuration
@@ -175,7 +179,7 @@ claude -p "Scan for security vulnerabilities in src/" \
 
 ### Multi-Stage Analysis
 ```bash
-SESSION=$(claude -p "Stage 1: Analyze" --output-format json | jq -r '.metadata.sessionId')
+SESSION=$(claude -p "Stage 1: Analyze" --output-format json | jq -r '.session_id')
 claude -r "$SESSION" -p "Stage 2: Design fix"
 claude -r "$SESSION" -p "Stage 3: Generate report"
 ```
@@ -197,7 +201,7 @@ wait
 ### Cost Tracking
 ```bash
 RESULT=$(claude -p "task" --output-format json)
-COST=$(echo "$RESULT" | jq -r '.metadata.totalCost')
+COST=$(echo "$RESULT" | jq -r '.total_cost_usd')
 echo "$COST" >> costs.log
 ```
 
@@ -317,7 +321,9 @@ export CLAUDE_LOG_DIR="/var/log/claude"
 |------|-------|-------------|---------|
 | `--print` | `-p` | Non-interactive mode | `claude -p "task"` |
 | `--continue` | `-c` | Resume last session | `claude -c -p "next"` |
-| `--resume` | `-r` | Resume specific session | `claude -r ID -p "continue"` |
+| `--resume` | `-r` | Resume by id, name, or transcript path | `claude -r "$SESSION_ID" -p "continue"` |
+| `--name` | `-n` | Display name for the session | `--name "my-session"` |
+| `--session-id` | | Session UUID | `--session-id "550e8400-e29b-41d4-a716-446655440000"` |
 | `--output-format` | | Output format | `--output-format json` |
 | `--model` | | Select model | `--model haiku` |
 | `--max-turns` | | Limit turns | `--max-turns 20` |
@@ -360,8 +366,8 @@ export CLAUDE_LOG_DIR="/var/log/claude"
 
 ```bash
 # Session won't resume
-# - Verify session ID from .metadata.sessionId
-# - Check ~/.claude/transcripts/ for session file
+# - Read session_id from the JSON result (a UUID), not a nested metadata field
+# - Transcripts live in ~/.claude/projects/<encoded-cwd>/<session-id>.jsonl
 
 # Permission errors
 # - Use --dangerously-skip-permissions (carefully!)
@@ -400,13 +406,13 @@ claude -p "Scan for hardcoded secrets" --allowedTools "Read,Grep,Glob" --output-
 for s in server{1..10}; do ssh $s "claude -p 'check health'"; done
 
 # Cost report
-grep cost logs/claude.json | jq -s 'map(.metadata.totalCost) | add'
+grep cost logs/claude.json | jq -s 'map(.total_cost_usd) | add'
 
 # Parallel analysis
 { claude -p "security"; } & { claude -p "performance"; } & wait
 
 # Session-based workflow
-SID=$(claude -p "start" --output-format json | jq -r '.metadata.sessionId'); \
+SID=$(claude -p "start" --output-format json | jq -r '.session_id'); \
 claude -r "$SID" -p "step 2"; \
 claude -r "$SID" -p "step 3"
 
@@ -417,7 +423,7 @@ until claude -p "task"; do sleep 5; done
 docker run --rm -v $(pwd):/w claude claude -p "analyze /w"
 
 # Budget tracking
-echo "$(date),$(claude -p 'task' --output-format json | jq .metadata.totalCost)" >> budget.csv
+echo "$(date),$(claude -p 'task' --output-format json | jq .total_cost_usd)" >> budget.csv
 ```
 
 ## Templates
@@ -444,7 +450,7 @@ with_session() {
     claude -r "$(cat $session_file)" -p "$task"
   else
     claude -p "$task" --output-format json | \
-      tee >(jq -r '.metadata.sessionId' > "$session_file")
+      tee >(jq -r '.session_id' > "$session_file")
   fi
 }
 
@@ -456,7 +462,7 @@ with_session "step 2"
 ```bash
 track() {
   local result=$(claude -p "$@" --output-format json)
-  echo "$result" | jq -r '[now, .metadata.totalCost] | @csv' >> costs.csv
+  echo "$result" | jq -r '[now, .total_cost_usd] | @csv' >> costs.csv
   echo "$result" | jq -r '.result'
 }
 

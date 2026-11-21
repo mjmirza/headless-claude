@@ -406,23 +406,22 @@ Finally, use the docs-generator agent to create security documentation based on 
 For independent tasks that can run simultaneously:
 
 ```bash
-# In headless mode, use multiple sessions
-SESSION1=$(claude -p "Use Explore agent to find all API endpoints" \
-  --output-format json --session-id "explore-apis" &)
+# In headless mode, use multiple sessions. --name labels each one.
+# Write JSON to a file: a background job inside $(...) returns no output.
+claude -p "Use Explore agent to find all API endpoints" \
+  --output-format json --name "explore-apis" > explore-apis.json &
 
-SESSION2=$(claude -p "Use Explore agent to find all database models" \
-  --output-format json --session-id "explore-models" &)
+claude -p "Use Explore agent to find all database models" \
+  --output-format json --name "explore-models" > explore-models.json &
 
-SESSION3=$(claude -p "Use Explore agent to find all test files" \
-  --output-format json --session-id "explore-tests" &)
+claude -p "Use Explore agent to find all test files" \
+  --output-format json --name "explore-tests" > explore-tests.json &
 
-# Wait for all to complete
 wait
 
-# Process results
-echo "API exploration: $SESSION1" | jq -r '.result'
-echo "Model exploration: $SESSION2" | jq -r '.result'
-echo "Test exploration: $SESSION3" | jq -r '.result'
+jq -r '.result' explore-apis.json
+jq -r '.result' explore-models.json
+jq -r '.result' explore-tests.json
 ```
 
 ### Pattern 3: Conditional Agent Selection
@@ -474,7 +473,7 @@ SUPERVISOR=$(claude -p "Coordinate implementation of $FEATURE:
   --max-turns 50)
 
 # Save supervisor session for future reference
-echo "$SUPERVISOR" | jq -r '.metadata.sessionId' > "$SESSION_FILE"
+echo "$SUPERVISOR" | jq -r '.session_id' > "$SESSION_FILE"
 
 echo "Supervised implementation complete"
 echo "$SUPERVISOR" | jq -r '.result'
@@ -503,7 +502,7 @@ EXPLORATION=$(claude -p "Use Explore agent (very thorough) to:
 4. Find related documentation" \
   --output-format json)
 
-EXPLORE_SESSION=$(echo "$EXPLORATION" | jq -r '.metadata.sessionId')
+EXPLORE_SESSION=$(echo "$EXPLORATION" | jq -r '.session_id')
 echo "Exploration complete (Session: $EXPLORE_SESSION)"
 
 # Stage 2: Security Analysis
@@ -570,7 +569,7 @@ pipeline_stage() {
     --max-turns 20)
 
   # Save session and result
-  echo "$RESULT" | jq -r '.metadata.sessionId' > "${session_file}.session"
+  echo "$RESULT" | jq -r '.session_id' > "${session_file}.session"
   echo "$RESULT" | jq -r '.result' > "${session_file}.result"
 
   echo "✓ ${stage_name} complete"
@@ -851,11 +850,9 @@ claude --agents '{
 ### Agent Resume Fails
 
 ```bash
-# Verify agent ID format
-# Should be: agent-{alphanumeric}
-
-# Check transcript file exists
-ls -la .claude/transcripts/agent-*.jsonl
+# Transcripts are JSONL files under ~/.claude/projects/.
+# The filename is the session UUID from the JSON result's session_id.
+ls ~/.claude/projects/*/*.jsonl
 
 # Use correct resume syntax
 claude -p "Resume agent agent-abc123 and continue task"

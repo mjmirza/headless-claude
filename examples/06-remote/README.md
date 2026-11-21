@@ -102,7 +102,7 @@ else
     "claude -p '$COMMAND' --output-format json")
 
   # Save session ID
-  SESSION_ID=$(echo "$RESULT" | jq -r '.metadata.sessionId')
+  SESSION_ID=$(echo "$RESULT" | jq -r '.session_id')
   ssh $USER@$REMOTE_HOST "echo '$SESSION_ID' > ~/.claude-session"
 
   echo "$RESULT" | tee "remote-${REMOTE_HOST}.log"
@@ -206,9 +206,9 @@ cat analysis-*.json | jq -s '
   {
     total_servers: length,
     combined_findings: map(.result) | add,
-    metadata: {
-      total_cost: map(.metadata.totalCost) | add,
-      total_duration: map(.metadata.duration) | add
+    totals: {
+      total_cost_usd: map(.total_cost_usd) | add,
+      duration_ms: map(.duration_ms) | add
     }
   }
 ' > combined-analysis.json
