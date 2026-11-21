@@ -355,8 +355,8 @@ execute_and_track() {
   local start_time=$(date +%s)
 
   local result=$(claude -p "$task" --output-format json)
-  local cost=$(echo "$result" | jq -r '.metadata.totalCost')
-  local duration=$(echo "$result" | jq -r '.metadata.duration')
+  local cost=$(echo "$result" | jq -r '.total_cost_usd')
+  local duration=$(echo "$result" | jq -r '.duration_ms')
 
   # Log cost data
   echo "$(date -u +%Y-%m-%dT%H:%M:%SZ),$task,$cost,$duration" >> "$COST_LOG"
@@ -426,7 +426,7 @@ claude -p "Analyze file3.js"
 claude -p "Analyze these files: file1.js, file2.js, file3.js"
 
 # ✓ Better - use session for related work
-SESSION=$(claude -p "Start code review" --output-format json | jq -r '.metadata.sessionId')
+SESSION=$(claude -p "Start code review" --output-format json | jq -r '.session_id')
 claude -r "$SESSION" -p "Review security"
 claude -r "$SESSION" -p "Review performance"
 claude -r "$SESSION" -p "Generate report"
@@ -462,8 +462,8 @@ collect_metrics() {
   local duration=$(echo "$end - $start" | bc)
 
   # Extract metadata
-  local cost=$(echo "$result" | jq -r '.metadata.totalCost // 0')
-  local turns=$(echo "$result" | jq -r '.metadata.turns // 0')
+  local cost=$(echo "$result" | jq -r '.total_cost_usd // 0')
+  local turns=$(echo "$result" | jq -r '.num_turns // 0')
 
   # Write metrics
   jq -n \
@@ -796,8 +796,8 @@ main() {
   local duration=$(($(date +%s) - start))
 
   # Extract metadata
-  local cost=$(echo "$result" | jq -r '.metadata.totalCost // 0')
-  local turns=$(echo "$result" | jq -r '.metadata.turns // 0')
+  local cost=$(echo "$result" | jq -r '.total_cost_usd // 0')
+  local turns=$(echo "$result" | jq -r '.num_turns // 0')
 
   # Update budget
   local today=$(date +%Y-%m-%d)

@@ -1,0 +1,11 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "duration_ms": 4500,
+  "duration_api_ms": 3200,
+  "num_turns": 3,
+  "result": "Here are the TypeScript files...",
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "total_cost_usd": 0.0123
+}

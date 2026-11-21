@@ -143,7 +143,7 @@ su - claudeuser -c 'claude --dangerously-skip-permissions -p "Audit configuratio
 claude -p "Begin comprehensive security audit" --output-format json > session.json
 
 # Get session ID
-SESSION_ID=$(cat session.json | jq -r '.metadata.sessionId')
+SESSION_ID=$(cat session.json | jq -r '.session_id')
 
 # Continue with context
 claude -r "$SESSION_ID" -p "Now check for SQL injection vulnerabilities"
@@ -468,7 +468,7 @@ wait
 |---------|-------------|---------|
 | `claude -p "query"` | One-shot headless execution | `claude -p "Analyze code"` |
 | `claude -c -p "next"` | Continue last conversation | `claude -c -p "Now check tests"` |
-| `claude -r ID -p "query"` | Resume specific session | `claude -r abc123 -p "Continue audit"` |
+| `claude -r ID -p "query"` | Resume specific session | `claude -r "$SESSION_ID" -p "Continue audit"` |
 | `claude --output-format json` | JSON output | `claude -p "Task" --output-format json` |
 | `claude --model haiku` | Use specific model | `claude -p "Quick search" --model haiku` |
 
@@ -531,7 +531,7 @@ jq -r '.result' security-audit.json > security-report.md
 ```bash
 # Multi-stage migration with checkpoints
 SESSION=$(claude -p "Plan database migration from MySQL to PostgreSQL" \
-  --output-format json | jq -r '.metadata.sessionId')
+  --output-format json | jq -r '.session_id')
 
 # Stage 1: Analysis
 claude -r "$SESSION" -p "Analyze current schema and data"
@@ -651,7 +651,7 @@ swagger-cli validate openapi.yaml
 1. **Monitor costs via JSON output**
    ```bash
    RESULT=$(claude -p "task" --output-format json)
-   COST=$(echo "$RESULT" | jq -r '.metadata.totalCost')
+   COST=$(echo "$RESULT" | jq -r '.total_cost_usd')
    echo "Cost: $COST" >> costs.log
    ```
 
@@ -724,13 +724,15 @@ claude -p "task" --permission-mode acceptEdits
 
 **Solutions:**
 ```bash
-# Verify session ID format (must be from .metadata.sessionId)
+# Read session_id from the JSON result. It is a UUID.
 RESULT=$(claude -p "task" --output-format json)
-SESSION=$(echo "$RESULT" | jq -r '.metadata.sessionId')
+SESSION=$(echo "$RESULT" | jq -r '.session_id')
 claude -r "$SESSION" -p "continue"
 
-# Check transcripts exist
-ls -la ~/.claude/transcripts/
+# Transcripts are JSONL files under ~/.claude/projects/.
+# The directory name is the working directory with non-alphanumeric
+# characters replaced by "-". The filename is the session UUID.
+ls ~/.claude/projects/
 ```
 
 #### 3. Output is truncated
