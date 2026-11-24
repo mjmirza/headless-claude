@@ -61,12 +61,13 @@ get_timestamp() {
 log_message() {
     local level="$1"
     local message="$2"
-    local timestamp
+    local timestamp log_file
     timestamp=$(get_timestamp)
 
-    local log_file="${CLAUDE_LOG_DIR}/claude-headless-$(date '+%Y%m%d').log"
+    log_file="${CLAUDE_LOG_DIR}/claude-headless-$(date '+%Y%m%d').log"
 
-    echo "[${timestamp}] [${level}] ${message}" | tee -a "${log_file}"
+    # Stdout is the command result. Callers already print status text on stderr.
+    printf '[%s] [%s] %s\n' "${timestamp}" "${level}" "${message}" >> "${log_file}"
 }
 
 # Logging functions
@@ -179,6 +180,10 @@ claude_exec_json() {
 
     log_info "Executing Claude with JSON output parsing..."
 
+    if [[ "${flags}" != *"--output-format"* ]]; then
+        flags="${flags:+${flags} }--output-format json"
+    fi
+
     local output
     output=$(claude_exec_capture "${prompt}" "${flags}")
 
@@ -226,7 +231,8 @@ claude_exec_parallel_agents() {
         claude_exec_subagent "${type}" "${desc}" "${prompt}" "${model}" &
         pids+=($!)
 
-        ((count++))
+        # Arithmetic assignment stays successful when count is 0 under set -e.
+        count=$((count + 1))
 
         # Wait if we've reached max parallel
         if [[ ${count} -ge ${max_parallel} ]]; then

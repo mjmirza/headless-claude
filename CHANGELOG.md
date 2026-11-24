@@ -101,6 +101,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Shell library logs are appended to the log file. Captured command output no longer includes those lines, so JSON results stay parseable.
+- `claude_exec_json` sends `--output-format json` when the caller has not already chosen a format.
+- Parallel runs no longer stop on the first task when errexit is enabled.
+
+### Added
+- Smoke test and CI job for the shell library (`tests/library-smoke.sh`).
+
 ### Planned
 - Advanced pipeline examples (07-pipelines)
 - Monitoring and observability examples (08-monitoring)
